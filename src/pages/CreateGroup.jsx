@@ -1,6 +1,6 @@
+import { supabase } from '../supabase';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../supabase';
 
 function CreateGroup() {
   const [groupName, setGroupName] = useState('');
@@ -9,7 +9,6 @@ function CreateGroup() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Add member to the list
   const addMember = () => {
     if (newMember.trim() === '') return;
     if (members.includes(newMember.trim())) {
@@ -20,35 +19,31 @@ function CreateGroup() {
     setNewMember('');
   };
 
-  // Remove member from list
   const removeMember = (name) => {
     setMembers(members.filter(m => m !== name));
   };
 
-  // Save group and members to Supabase
   const createGroup = async () => {
-    if (groupName.trim() === '') {
-      alert('Please enter a group name');
-      return;
-    }
-    if (members.length < 2) {
-      alert('Please add at least 2 members');
-      return;
-    }
+    if (groupName.trim() === '') return alert('Please enter a group name');
+    if (members.length < 2) return alert('Please add at least 2 members');
 
     setLoading(true);
-
     try {
-      // Step 1: Save group to "groups" table
+      // Get current logged in user
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // Save group with created_by user id
       const { data: groupData, error: groupError } = await supabase
         .from('groups')
-        .insert([{ name: groupName.trim() }])
+        .insert([{
+          name: groupName.trim(),
+          created_by: user.id        // ← save who created it
+        }])
         .select()
         .single();
 
       if (groupError) throw groupError;
 
-      // Step 2: Save each member to "members" table
       const memberRows = members.map(name => ({
         name: name,
         group_id: groupData.id
@@ -60,7 +55,6 @@ function CreateGroup() {
 
       if (memberError) throw memberError;
 
-      // Step 3: Go to dashboard
       navigate(`/dashboard/${groupData.id}`);
 
     } catch (error) {
@@ -71,15 +65,14 @@ function CreateGroup() {
   };
 
   return (
-    <div className="min-h-screen bg-blue-50 flex items-center justify-center px-4">
-      <div className="bg-white rounded-2xl shadow-md p-8 w-full max-w-md">
+    <div className="min-h-screen bg-blue-50 dark:bg-slate-900 flex items-center justify-center px-4">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-md p-8 w-full max-w-md">
 
         <h2 className="text-2xl font-bold text-blue-600 mb-1">Create a Group</h2>
         <p className="text-gray-400 text-sm mb-6">Name your group and add members</p>
 
-        {/* Group Name Input */}
         <div className="mb-5">
-          <label className="block text-sm font-medium text-gray-600 mb-1">
+          <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">
             Group Name
           </label>
           <input
@@ -87,13 +80,12 @@ function CreateGroup() {
             placeholder="e.g. Goa Trip, Flat Expenses"
             value={groupName}
             onChange={(e) => setGroupName(e.target.value)}
-            className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+            className="w-full border border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
           />
         </div>
 
-        {/* Add Members */}
         <div className="mb-5">
-          <label className="block text-sm font-medium text-gray-600 mb-1">
+          <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">
             Add Members
           </label>
           <div className="flex gap-2">
@@ -103,7 +95,7 @@ function CreateGroup() {
               value={newMember}
               onChange={(e) => setNewMember(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && addMember()}
-              className="flex-1 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+              className="flex-1 border border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
             />
             <button
               onClick={addMember}
@@ -114,17 +106,16 @@ function CreateGroup() {
           </div>
         </div>
 
-        {/* Members List */}
         {members.length > 0 && (
           <div className="mb-6">
-            <p className="text-sm font-medium text-gray-600 mb-2">
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
               Members ({members.length})
             </p>
             <div className="flex flex-wrap gap-2">
               {members.map((member) => (
                 <span
                   key={member}
-                  className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-sm flex items-center gap-1"
+                  className="bg-blue-50 dark:bg-slate-700 text-blue-600 px-3 py-1 rounded-full text-sm flex items-center gap-1"
                 >
                   {member}
                   <button
@@ -139,7 +130,6 @@ function CreateGroup() {
           </div>
         )}
 
-        {/* Create Button */}
         <button
           onClick={createGroup}
           disabled={loading}

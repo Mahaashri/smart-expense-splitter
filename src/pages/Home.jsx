@@ -5,6 +5,7 @@ import { supabase } from '../supabase';
 function Home() {
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [userName, setUserName] = useState('');
 
   useEffect(() => {
     fetchGroups();
@@ -13,9 +14,15 @@ function Home() {
   const fetchGroups = async () => {
     setLoading(true);
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      setUserName(user?.email?.split('@')[0] || 'there');
+
+      // Only fetch THIS user's groups
       const { data, error } = await supabase
         .from('groups')
         .select('*')
+        .eq('created_by', user.id)        // ← filter by user
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -31,16 +38,21 @@ function Home() {
     <div className="min-h-screen bg-blue-50 dark:bg-slate-900 px-4 py-8">
       <div className="max-w-2xl mx-auto">
 
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-blue-600">
-              My Groups
-            </h1>
-            <p className="text-gray-400 text-sm mt-1">
-              Select a group or create a new one
-            </p>
-          </div>
+        {/* Welcome Header */}
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-6 mb-6">
+          <h1 className="text-2xl font-bold text-blue-600">
+            Hey, {userName} 👋
+          </h1>
+          <p className="text-gray-400 text-sm mt-1">
+            Here are your expense groups
+          </p>
+        </div>
+
+        {/* Groups Header */}
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200">
+            My Groups
+          </h2>
           <Link
             to="/create"
             className="bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-blue-600 transition"
@@ -76,7 +88,7 @@ function Home() {
               <Link
                 key={group.id}
                 to={`/dashboard/${group.id}`}
-                className="block bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-5 hover:shadow-md transition hover:border-blue-200 border border-transparent"
+                className="block bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-5 hover:shadow-md transition border border-transparent hover:border-blue-200"
               >
                 <div className="flex items-center justify-between">
                   <div>
