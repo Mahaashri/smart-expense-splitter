@@ -32,15 +32,9 @@ function Navbar({ user }) {
             <span className="text-sm text-gray-400 hidden sm:block">
               {user.email}
             </span>
-            <Link
-              to="/create"
-              className="bg-blue-500 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-600 transition"
-            >
-              + New Group
-            </Link>
             <button
               onClick={handleLogout}
-              className="text-sm text-gray-400 hover:text-red-400 transition"
+              className="text-sm text-red-400 hover:text-red-500 transition border border-red-200 px-3 py-1 rounded-lg"
             >
               Logout
             </button>
